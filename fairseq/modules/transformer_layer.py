@@ -165,6 +165,9 @@ class TransformerEncoderLayerBase(nn.Module):
         x,
         encoder_padding_mask: Optional[Tensor],
         attn_mask: Optional[Tensor] = None,
+        need_attn: bool = False,  # de9uch1
+        need_head_weights: bool = False,  # de9uch1
+
     ):
         """
         Args:
@@ -186,6 +189,12 @@ class TransformerEncoderLayerBase(nn.Module):
         # Note that we cannot use -inf here, because at some edge cases,
         # the attention weight (before softmax) for some padded element in query
         # will become -inf, which results in NaN in model parameters
+
+        """ # de9uch1 added this"""
+        if need_head_weights:
+            need_attn = True
+        """ end of # de9uch1 added this"""
+
         if attn_mask is not None:
             attn_mask = attn_mask.masked_fill(
                 attn_mask.to(torch.bool), -1e8 if x.dtype == torch.float32 else -1e4
@@ -194,13 +203,16 @@ class TransformerEncoderLayerBase(nn.Module):
         residual = x
         if self.normalize_before:
             x = self.self_attn_layer_norm(x)
-        x, _ = self.self_attn(
+        print("[DEBUG] currently in Encoder layer base.")  # Stanley
+
+        x, attn = self.self_attn(
             query=x,
             key=x,
             value=x,
             key_padding_mask=encoder_padding_mask,
-            need_weights=False,
+            need_weights=need_attn,  # de9uch1
             attn_mask=attn_mask,
+            need_head_weights=need_head_weights  # de9uch1
         )
         x = self.dropout_module(x)
         x = self.residual_connection(x, residual)
@@ -223,7 +235,11 @@ class TransformerEncoderLayerBase(nn.Module):
 
         if self.return_fc and not torch.jit.is_scripting():
             return x, fc_result
-        return x
+        """# de9uch1"""
+        if need_attn:
+            return x, attn
+        return x, None
+        """end # de9uch1"""
 
 
 # backward compatible with the legacy argparse format
@@ -448,6 +464,7 @@ class TransformerDecoderLayerBase(nn.Module):
         else:
             y = x
 
+        print(f'[DEBUG] currently in Decoder layer base.')
         x, attn = self.self_attn(
             query=x,
             key=y,
@@ -470,6 +487,7 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.self_attn_layer_norm(x)
 
         if self.encoder_attn is not None and encoder_out is not None:
+            print("[DEBUG] encoder results ready, decoder just done ==> cross attention?? ")
             residual = x
             if self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)

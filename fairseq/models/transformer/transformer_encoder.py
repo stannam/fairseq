@@ -137,6 +137,7 @@ class TransformerEncoderBase(FairseqEncoder):
         src_tokens,
         src_lengths: Optional[torch.Tensor] = None,
         return_all_hiddens: bool = False,
+        return_all_attn: bool = False,  # de9uch1
         token_embeddings: Optional[torch.Tensor] = None,
     ):
         """
@@ -147,6 +148,8 @@ class TransformerEncoderBase(FairseqEncoder):
                 shape `(batch)`
             return_all_hiddens (bool, optional): also return all of the
                 intermediate hidden states (default: False).
+            return_all_attn (bool, optional): also return all of the    # de9uch1
+                intermediate layers' attention weights (default: False).   # de9uch1
             token_embeddings (torch.Tensor, optional): precomputed embeddings
                 default `None` will recompute embeddings
 
@@ -161,6 +164,9 @@ class TransformerEncoderBase(FairseqEncoder):
                 - **encoder_states** (List[Tensor]): all intermediate
                   hidden states of shape `(src_len, batch, embed_dim)`.
                   Only populated if *return_all_hiddens* is True.
+                - **encoder_attn** (List[Tensor]): all intermediate
+                  layers' attention weights of shape `(num_heads, batch, src_len, src_len)`.
+                  Only populated if *return_all_attn* is True.
         """
         return self.forward_scriptable(
             src_tokens, src_lengths, return_all_hiddens, token_embeddings
@@ -260,6 +266,7 @@ class TransformerEncoderBase(FairseqEncoder):
             "encoder_padding_mask": [encoder_padding_mask],  # B x T
             "encoder_embedding": [encoder_embedding],  # B x T x C
             "encoder_states": encoder_states,  # List[T x B x C]
+            "encoder_attn": encoder_attn,  # List[N x B x T x T]            # de9uch1
             "fc_results": fc_results,  # List[T x B x C]
             "src_tokens": [],
             "src_lengths": [src_lengths],
@@ -309,11 +316,19 @@ class TransformerEncoderBase(FairseqEncoder):
             for idx, state in enumerate(encoder_states):
                 encoder_states[idx] = state.index_select(1, new_order)
 
+        """ # de9uch1 added this chunch"""
+        encoder_attn = encoder_out["encoder_attn"]
+        if len(encoder_attn) > 0:
+            for idx, state in enumerate(encoder_attn):
+                encoder_attn[idx] = state.index_select(1, new_order)
+        """ End addition"""
+
         return {
             "encoder_out": new_encoder_out,  # T x B x C
             "encoder_padding_mask": new_encoder_padding_mask,  # B x T
             "encoder_embedding": new_encoder_embedding,  # B x T x C
             "encoder_states": encoder_states,  # List[T x B x C]
+            "encoder_attn": encoder_attn,  # List[N x B x T x T]  # de9uch1
             "src_tokens": src_tokens,  # B x T
             "src_lengths": src_lengths,  # B x 1
         }
