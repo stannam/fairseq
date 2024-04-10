@@ -336,7 +336,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                 self_attn_mask = self.buffered_future_mask(x)
             else:
                 self_attn_mask = None
-
+            print(f'[DEBUG] now Decoder layer{idx}')
             x, layer_attn, _ = layer(
                 x,
                 enc,

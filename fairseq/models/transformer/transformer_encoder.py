@@ -169,7 +169,7 @@ class TransformerEncoderBase(FairseqEncoder):
                   Only populated if *return_all_attn* is True.
         """
         return self.forward_scriptable(
-            src_tokens, src_lengths, return_all_hiddens, token_embeddings
+            src_tokens, src_lengths, return_all_hiddens, return_all_attn, token_embeddings  # Stanley
         )
 
     # TorchScript doesn't support super() method so that the scriptable Subclass
@@ -181,6 +181,7 @@ class TransformerEncoderBase(FairseqEncoder):
         src_tokens,
         src_lengths: Optional[torch.Tensor] = None,
         return_all_hiddens: bool = False,
+        return_all_attn: bool = True,  # Stanley
         token_embeddings: Optional[torch.Tensor] = None,
     ):
         """
@@ -206,6 +207,7 @@ class TransformerEncoderBase(FairseqEncoder):
                   hidden states of shape `(src_len, batch, embed_dim)`.
                   Only populated if *return_all_hiddens* is True.
         """
+        return_all_attn = True  # Stanley: Forcing return_all_attn
         # compute padding mask
         encoder_padding_mask = src_tokens.eq(self.padding_idx)
         has_pads = (
@@ -232,9 +234,13 @@ class TransformerEncoderBase(FairseqEncoder):
             encoder_states.append(x)
 
         # encoder layers
-        for layer in self.layers:
-            lr = layer(
-                x, encoder_padding_mask=encoder_padding_mask if has_pads else None
+        encoder_attn = []  # Stanley: container for encoder_attn
+        for layernumber, layer in enumerate(self.layers):
+            print(f'[DEBUG] Now encoder layer #{layernumber}')
+            lr, attn = layer(
+                x,
+                encoder_padding_mask=encoder_padding_mask if has_pads else None,
+                need_head_weights=True  # Stanley
             )
 
             if isinstance(lr, tuple) and len(lr) == 2:
@@ -247,6 +253,12 @@ class TransformerEncoderBase(FairseqEncoder):
                 assert encoder_states is not None
                 encoder_states.append(x)
                 fc_results.append(fc_result)
+
+            """Stanley added this chunk"""
+            if return_all_attn and attn is not None:
+                assert encoder_attn is not None
+                encoder_attn.append(attn)
+            """End addition"""
 
         if self.layer_norm is not None:
             x = self.layer_norm(x)

@@ -15,6 +15,12 @@ from fairseq import search, utils
 from fairseq.data import data_utils
 from fairseq.models import FairseqIncrementalDecoder
 from fairseq.ngram_repeat_block import NGramRepeatBlock
+"""stanley: for pickling"""
+import os
+import pickle
+pkl_dir = os.environ["PKL_LOC"].split(',')
+pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
+"""end for pickling"""
 
 
 class SequenceGenerator(nn.Module):
@@ -278,6 +284,18 @@ class SequenceGenerator(nn.Module):
         # compute the encoder output for each beam
         with torch.autograd.profiler.record_function("EnsembleModel: forward_encoder"):
             encoder_outs = self.model.forward_encoder(net_input)
+            """Stanley: injected lines here. encoder_outs[n]['encoder_attn'] contains encoder attentions."""
+            print("[DEBUG] About to start pickling encoder_attn")
+            with open(pkl_path, 'rb') as file:
+                # Load the pickled object
+                attention_pickle = pickle.load(file)
+            flatten_key = tuple(src_tokens.numpy().flatten())
+            attention_pickle[flatten_key]['encoder_outs'] = encoder_outs
+            with open(pkl_path, 'wb') as file:
+                # Pickle the 'data' dictionary and write it to the file
+                pickle.dump(attention_pickle, file)
+            # print(encoder_outs)
+            """Injection ends here"""
 
         # placeholder of indices for bsz * beam_size to hold tokens and accumulative scores
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
@@ -363,6 +381,19 @@ class SequenceGenerator(nn.Module):
                     incremental_states,
                     self.temperature,
                 )
+                """ Stanley added this chunk to save decoder self-attention"""
+                print("[DEBUG] About to start pickling decoder_attn")
+                with open(pkl_path, 'rb') as file:
+                    # Load the pickled object
+                    attention_pickle = pickle.load(file)
+                flatten_key = tuple(src_tokens.numpy().flatten())
+                if not 'decoder_attn' in attention_pickle[flatten_key]:
+                    attention_pickle[flatten_key]['decoder_attn'] = []
+                attention_pickle[flatten_key]['decoder_attn'].append(avg_attn_scores)
+                with open(pkl_path, 'wb') as file:
+                    # Pickle the 'data' dictionary and write it to the file
+                    pickle.dump(attention_pickle, file)
+                """end addition"""
 
             if self.lm_model is not None:
                 lm_out = self.lm_model(tokens[:, : step + 1])

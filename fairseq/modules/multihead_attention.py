@@ -522,6 +522,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
             # A workaround for quantization to work. Otherwise JIT compilation
             # treats bias in linear module as method.
             and not torch.jit.is_scripting()
+            and not need_head_weights
             # The Multihead attention implemented in pytorch forces strong dimension check
             # for input embedding dimention and K,Q,V projection dimension.
             # Since pruning will break the dimension check and it is not easy to modify the pytorch API,
@@ -779,7 +780,8 @@ class MultiheadAttention(FairseqIncrementalDecoder):
             if not need_head_weights:
                 # average attention weights over heads
                 attn_weights = attn_weights.mean(dim=0)
-
+        print(
+            f"[DEBUG] inside MultiheadAttention forward(): \nattn (size {attn.size()}):\n{attn}\nattn_weights (size {attn_weights.size()}):\n{attn_weights}")
         return attn, attn_weights
 
     @staticmethod
