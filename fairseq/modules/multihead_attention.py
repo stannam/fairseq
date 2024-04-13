@@ -770,14 +770,20 @@ class MultiheadAttention(nn.Module):
             attn = attn.transpose(0, 1).contiguous().view(tgt_len, bsz, self.embed_dim)
         attn = self.out_proj(attn)
         attn_weights: Optional[Tensor] = None
+        print(f'[DEBUG] inside MultiheadAttention forward():')
+        print('I want attention weights so force need_weights=True')
+        need_weights = True
+        need_head_weights = True
         if need_weights:
+            print(f'[DEBUG] need_weights = True')
             attn_weights = attn_weights_float.view(
                 bsz, self.num_heads, tgt_len, src_len
             ).transpose(1, 0)
             if not need_head_weights:
                 # average attention weights over heads
+                print(f'[DEBUG] need_head_weights = False, so will average attention weights over heads')
                 attn_weights = attn_weights.mean(dim=0)
-
+        print(f'[DEBUG] \nattn (results of applying attention weights and to be fed to the subsequent layer.) (size {attn.size()}):\n{attn}\nattn_weights: (size {attn_weights.size()}):\n{attn_weights}")')
         return attn, attn_weights
 
     @staticmethod

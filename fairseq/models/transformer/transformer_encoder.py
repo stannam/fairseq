@@ -290,7 +290,8 @@ class TransformerEncoderBase(FairseqEncoder):
         else:
             processing_mask = encoder_padding_mask
         encoder_padding_mask_out = processing_mask if has_pads else None
-        for layer in self.layers:
+        for layernumber, layer in enumerate(self.layers):
+            print(f'[DEBUG] Now encoder layer #{layernumber}')
             lr = layer(x, encoder_padding_mask=encoder_padding_mask_out)
 
             if isinstance(lr, tuple) and len(lr) == 2:

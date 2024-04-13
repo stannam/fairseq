@@ -348,6 +348,7 @@ class TransformerEncoderLayerBase(nn.Module):
             residual = x
             if self.normalize_before:
                 x = self.self_attn_layer_norm(x)
+            print("[DEBUG] currently in Encoder layer base")  # stanley
             x, _ = self.self_attn(
                 query=x,
                 key=x,
@@ -601,7 +602,7 @@ class TransformerDecoderLayerBase(nn.Module):
             y = torch.cat((encoder_out, x), dim=0)
         else:
             y = x
-
+        print(f'[DEBUG] currently in Decoder layer base. About to call self.self_attn')
         x, attn = self.self_attn(
             query=x,
             key=y,
@@ -611,6 +612,7 @@ class TransformerDecoderLayerBase(nn.Module):
             need_weights=False,
             attn_mask=self_attn_mask,
         )
+        print(f'[DEBUG] result of self.self_attn:\n  x: {x}\n  attn: {attn}')
         if self.c_attn is not None:
             tgt_len, bsz = x.size(0), x.size(1)
             x = x.view(tgt_len, bsz, self.nh, self.head_dim)
@@ -624,6 +626,7 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.self_attn_layer_norm(x)
 
         if self.encoder_attn is not None and encoder_out is not None:
+            print("[DEBUG] encoder results ready, decoder just done ==> cross attentions?")
             residual = x
             if self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)
