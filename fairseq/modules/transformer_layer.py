@@ -671,17 +671,23 @@ class TransformerDecoderLayerBase(nn.Module):
             with open(pkl_path, 'rb') as file:
                 # load the pickled object
                 attention_pickle = pickle.load(file)
-                for word_key, value in attention_pickle.items():
-                    if not value.get('finished', True):
-                        layer_idx = 0
-                        while True:
-                            if not f'layer{layer_idx}' in word_key:
-                                break
-                            layer_idx += 1
-                        attention_pickle[word_key][f'layer{layer_idx}'] = {
-                            "decoder_self_attention_weights": decoder_self_attention_weights,
-                            "cross_attention_weights": cross_attention_weights
-                        }
+            for word_key, value in attention_pickle.items():
+                if not value.get('finished', True):
+                    seg_idx = 0
+                    while True:
+                        if not f'seg{seg_idx}' in attention_pickle[word_key]:
+                            break
+                        seg_idx += 1
+                    to_write = attention_pickle[word_key][f'seg{seg_idx - 1}']
+                    layer_idx = 0
+                    while True:
+                        if not f'layer{layer_idx}' in to_write:
+                            break
+                        layer_idx += 1
+                    to_write[f'layer{layer_idx}'] = {
+                        "decoder_self_attention_weights": decoder_self_attention_weights,
+                        "cross_attention_weights": cross_attention_weights
+                    }
 
             with open(pkl_path, 'wb') as file:
                 # Pickle to the file

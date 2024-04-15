@@ -27,6 +27,14 @@ from fairseq.modules.checkpoint_activations import checkpoint_wrapper
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
 from torch import Tensor
 
+"""stanley: for pickling attentions"""
+import os
+import pickle
+import copy
+pkl_dir = os.environ["PKL_LOC"].split(',')
+pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
+"""end for pickling"""
+
 
 # rewrite name for backward compatibility in `make_generation_fast_`
 def module_name_fordropout(module_name: str) -> str:
@@ -331,6 +339,25 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         # decoder layers
         attn: Optional[Tensor] = None
         inner_states: List[Optional[Tensor]] = [x]
+        """Stanley: attention pkl segment treatment"""
+        with open(pkl_path, 'rb') as file:
+            # load the pickled object
+            attention_pickle = pickle.load(file)
+        for word_key, value in attention_pickle.items():
+            if not value.get('finished', True):
+                seg_idx = 0
+                while True:
+                    if not f'seg{seg_idx}' in attention_pickle[word_key]:
+                        break
+                    seg_idx += 1
+                attention_pickle[word_key][f'seg{seg_idx}'] = {}
+                print(f"[DEBUG] Segment {seg_idx}")
+
+        with open(pkl_path, 'wb') as file:
+            # Pickle to the file
+            pickle.dump(attention_pickle, file)
+
+        """End injection"""
         for idx, layer in enumerate(self.layers):
             if incremental_state is None and not full_context_alignment:
                 self_attn_mask = self.buffered_future_mask(x)

@@ -19,6 +19,11 @@ from fairseq.data import encoders
 
 logger = logging.getLogger(__name__)
 
+"""stanley: for pickling attentions"""
+import pickle
+pkl_dir = os.environ["PKL_LOC"].split(',')
+pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
+"""end for pickling"""
 
 def from_pretrained(
     model_name_or_path,
@@ -194,6 +199,23 @@ class GeneratorHubInterface(nn.Module):
 
         # sort output to match input order
         outputs = [hypos for _, hypos in sorted(results, key=lambda x: x[0])]
+        # stanley: for pickling
+        flatten_key = tuple(batch['net_input']['src_tokens'].numpy().flatten())
+        first_output = outputs[0]  # get the idx of the winning hypothesis
+        winner_idx = None
+        for res_idx, result in enumerate(results):
+            if result[1] == first_output:
+                winner_idx = res_idx
+                break
+        with open(pkl_path, 'rb') as file:
+            # Load the pickled object
+            attention_pickle = pickle.load(file)
+        attention_pickle[flatten_key]['output'] = outputs[0]
+        attention_pickle[flatten_key]['winner_idx'] = winner_idx
+        with open(pkl_path, 'wb') as file:
+            # Pickle the 'data' dictionary and write it to the file
+            pickle.dump(attention_pickle, file)
+        # stanley : end pickling
 
         if verbose:
 

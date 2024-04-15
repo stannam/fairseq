@@ -1,5 +1,6 @@
 import os
 import pickle
+from shutil import copy as cp
 from datetime import datetime
 
 from fairseq.models.transformer import TransformerModel
@@ -58,7 +59,6 @@ def pkl_handler(dest_path: str,
 
 def extract_attention(model, input_word: str, pkl_path:str):
     # overriding input_word for debugging
-    input_word = "t v k m a ng"  # output: t v ngZ m a ngZ
     print(f'Input: {input_word}')
     src_tokens = model.encode(input_word)
     flatten_key = tuple(src_tokens.numpy().flatten())
@@ -73,6 +73,13 @@ def extract_attention(model, input_word: str, pkl_path:str):
     # add output_word to pickle
     pkl_handler(dest_path=pkl_path, key_to_write='output_word', value_to_write=output_word, flatten_key=flatten_key)
 
+    # don't make the pickle too heavy. to make sure one pickle contains one word,
+    # copy the pickle created so far and start anew.
+    pkl_dir = os.environ["PKL_LOC"].split(',')
+    new_pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}_{input_word}.pkl')
+    cp(pkl_path, new_pkl_path)
+    pkl_handler(pkl_path)  # clear the pickle file.
+
 
 def main():
     # Initial printout to help myself...
@@ -81,6 +88,9 @@ def main():
     pkl_dir = os.environ["PKL_LOC"].split(',')
     pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
     print(f'[INFO] Working directory: {os.getcwd()}\n[INFO] Pickle location: {pkl_path}')
+    need_quit = input("\n Make sure the info above makes sense. Q to quit.")
+    if need_quit.lower() == 'q':
+        return
 
     # Script actually starts here.
 
