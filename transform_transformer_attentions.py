@@ -19,7 +19,8 @@
 # |
 # +-- ...
 #
-# this gets converted to dict of words in which each word is a dict with the following structure:
+# this gets converted to dict of words in which each word is a dict with the following structure
+# (word > layers > heads > segs):
 # (each word)
 # |
 # +-- (layers: list of layers)

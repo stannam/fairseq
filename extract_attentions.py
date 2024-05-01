@@ -3,11 +3,36 @@ import pickle
 from shutil import copy as cp
 from datetime import datetime
 
+
+def path_selector(pathtype='file', msg='Select path') -> str:
+    import tkinter as tk
+    from tkinter import filedialog
+    from tkinter import messagebox
+    root = tk.Tk()
+    root.withdraw()
+
+    if os.name == 'posix':
+        # if mac, msgbox for msg
+        messagebox.showinfo(title="Info", message=msg)
+
+    while True:
+        if pathtype == 'file':
+            selected_path = filedialog.askopenfilename(title=msg)
+            if selected_path and os.path.isfile(selected_path):
+                break
+        elif pathtype == 'dir':
+            selected_path = filedialog.askdirectory(title=msg)
+            if selected_path and os.path.isdir(selected_path):
+                break
+    root.destroy()
+
+    return selected_path
+
 from fairseq.models.transformer import TransformerModel
 from fairseq.data import Dictionary
 
-# make sure to set '2024-01-26 model_outputs' as the working directory
-# and also environment variable for pickle
+# make sure to set the working directory
+# and also environment variable for pickle. e.g., 'PKL_LOC'=
 
 CWD = os.getcwd()
 DATA_BIN = os.path.join(CWD, 'bin')
@@ -15,7 +40,7 @@ DICTIONARY = os.path.join(DATA_BIN, 'dict.ur.txt')
 
 # if visualizing the 'functional' transformer-tiny model
 MODEL = os.path.join(CWD, 'model_output_transformer')
-CHECKPOINT = 'checkpoint97.pt'
+CHECKPOINT = 'checkpoint110.pt'
 
 # visualizing the 'complex' transformer model
 #MODEL = os.path.join(CWD, '2024-03-14 transformer_output')
@@ -35,8 +60,11 @@ def pkl_handler(dest_path: str,
                 flatten_key: tuple = 0) -> None:
     if key_to_write is None:
         # create new pkl file.
+        containing_dir = os.path.dirname(dest_path)
+        if not os.path.exists(containing_dir):
+            os.makedirs(containing_dir)
         dummy = {}
-        with open(dest_path, 'wb') as file:
+        with open(dest_path, 'wb+') as file:
             pickle.dump(dummy, file)
         return
 
@@ -87,7 +115,10 @@ def main():
     print(f'[INFO] The start time is {now}.')
     pkl_dir = os.environ["PKL_LOC"].split(',')
     pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
-    print(f'[INFO] Working directory: {os.getcwd()}\n[INFO] Checkpoint: {CHECKPOINT}\n[INFO] Pickle location: {pkl_path}')
+    print(f'[INFO] Working directory: {os.getcwd()}\n'
+          f'[INFO] Checkpoint: {CHECKPOINT} .. exists? {os.path.exists(os.path.join(MODEL,CHECKPOINT))}\n'
+          f'[INFO] Data bin exists? {os.path.exists(os.path.join(DATA_BIN))}\n'
+          f'[INFO] Pickle location: Working directory + {"/".join(pkl_dir)}.pkl')
     need_quit = input("\n Make sure the info above makes sense. Q to quit.")
     if need_quit.lower() == 'q':
         return
@@ -103,7 +134,18 @@ def main():
     pkl_handler(pkl_path)
 
     # load the wordlist I used for the human experiment
-    experiment_wordlist_path = os.path.join('2024-03-08 apply_translation', 'entries.txt')
+    experiment_wordlist_path = os.path.join('apply_translation', 'entries.txt')
+    if not os.path.exists(experiment_wordlist_path):
+        message = "No experiment stimuli list file found. select 'apply_translation/entries.txt' to continue."
+        stimuli_list_path = path_selector(pathtype='file', msg=message)
+        stimuli_list_dir = os.path.join(CWD, 'apply_translation')
+        if not os.path.exists(stimuli_list_dir):
+            os.makedirs(stimuli_list_dir)
+        cp(stimuli_list_path, os.path.join(stimuli_list_dir,'entries.txt'))
+        experiment_wordlist_path = os.path.join(stimuli_list_dir, 'entries.txt')
+
+
+
     with open(experiment_wordlist_path, 'r', encoding='utf-8') as file:
         words = [line.strip() for line in file]
 
