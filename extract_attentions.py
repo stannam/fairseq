@@ -87,7 +87,7 @@ def main():
     print(f'[INFO] The start time is {now}.')
     pkl_dir = os.environ["PKL_LOC"].split(',')
     pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
-    print(f'[INFO] Working directory: {os.getcwd()}\n[INFO] Pickle location: {pkl_path}')
+    print(f'[INFO] Working directory: {os.getcwd()}\n[INFO] Checkpoint: {CHECKPOINT}\n[INFO] Pickle location: {pkl_path}')
     need_quit = input("\n Make sure the info above makes sense. Q to quit.")
     if need_quit.lower() == 'q':
         return
