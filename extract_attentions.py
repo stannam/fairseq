@@ -2,6 +2,25 @@ import os
 import pickle
 from shutil import copy as cp
 from datetime import datetime
+from fairseq.models.transformer import TransformerModel
+from fairseq.data import Dictionary
+
+# make sure to set the working directory
+# and also environment variable for pickle. e.g., 'PKL_LOC'=
+
+CWD = os.getcwd()
+DATA_BIN = os.path.join(CWD, 'bin')
+DICTIONARY = os.path.join(DATA_BIN, 'dict.ur.txt')
+
+# if visualizing my custom transformer model
+MODEL = os.path.join(CWD, 'model_output_transformer')
+CHECKPOINT = 'checkpoint110.pt'
+
+# if visualizing an example from fairseq
+#MODEL = os.path.join(CWD, 'wmt14.en-fr.joined-dict.transformer')  # a fairseq example model
+#DATA_BIN = os.path.join(CWD, 'wmt14.en-fr.joined-dict.newstest2014')
+#DICTIONARY = os.path.join(DATA_BIN, 'dict.en.txt')
+#CHECKPOINT = 'model.pt'
 
 
 def path_selector(pathtype='file', msg='Select path') -> str:
@@ -27,31 +46,6 @@ def path_selector(pathtype='file', msg='Select path') -> str:
     root.destroy()
 
     return selected_path
-
-from fairseq.models.transformer import TransformerModel
-from fairseq.data import Dictionary
-
-# make sure to set the working directory
-# and also environment variable for pickle. e.g., 'PKL_LOC'=
-
-CWD = os.getcwd()
-DATA_BIN = os.path.join(CWD, 'bin')
-DICTIONARY = os.path.join(DATA_BIN, 'dict.ur.txt')
-
-# if visualizing the 'functional' transformer-tiny model
-MODEL = os.path.join(CWD, 'model_output_transformer')
-CHECKPOINT = 'checkpoint110.pt'
-
-# visualizing the 'complex' transformer model
-#MODEL = os.path.join(CWD, '2024-03-14 transformer_output')
-#CHECKPOINT = 'checkpoint3.pt'
-
-# visualizing an example from fairseq
-#MODEL = os.path.join(CWD, 'wmt14.en-fr.joined-dict.transformer')  # a fairseq example model
-#DATA_BIN = os.path.join(CWD, 'wmt14.en-fr.joined-dict.newstest2014')
-#DICTIONARY = os.path.join(DATA_BIN, 'dict.en.txt')
-#CHECKPOINT = 'model.pt'
-
 
 def pkl_handler(dest_path: str,
                 key_to_write: str = None,
@@ -143,8 +137,6 @@ def main():
             os.makedirs(stimuli_list_dir)
         cp(stimuli_list_path, os.path.join(stimuli_list_dir,'entries.txt'))
         experiment_wordlist_path = os.path.join(stimuli_list_dir, 'entries.txt')
-
-
 
     with open(experiment_wordlist_path, 'r', encoding='utf-8') as file:
         words = [line.strip() for line in file]

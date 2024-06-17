@@ -442,10 +442,13 @@ class SequenceGenerator(nn.Module):
             )
 
             finalized_sents: List[int] = []
+            self.peek_tokens(tokens, step) # Stanley: injected peek
             if eos_bbsz_idx.numel() > 0:
                 eos_scores = torch.masked_select(
                     cand_scores[:, :beam_size], mask=eos_mask[:, :beam_size]
                 )
+
+                # Stanley: decide terminate
 
                 finalized_sents = self.finalize_hypos(
                     step,
@@ -462,6 +465,9 @@ class SequenceGenerator(nn.Module):
                 )
                 num_remaining_sent -= len(finalized_sents)
 
+
+                #finalized_sents = [0]   # Stanley: include these two lines to force terminate
+                #num_remaining_sent = 0
             assert num_remaining_sent >= 0
             if num_remaining_sent == 0:
                 break
@@ -620,6 +626,17 @@ class SequenceGenerator(nn.Module):
         tensor = tensor.view(-1, beam_size, tensor.size(-1))
         tensor[mask] = tensor[mask][:, :1, :]
         return tensor.view(-1, tensor.size(-1))
+# Stanley: makshift function to have a peek into token in each step
+    def peek_tokens(self, tokens, step):
+        # have a peek into the first hypothesis as generated!
+
+        # (line from finalize_hypos())
+        tokens_clone = tokens.index_select(0, torch.tensor([0]))[
+            :, 1 : step + 2
+        ]  # skip the first index, which is EOS
+        print(f'[PEEK] Step #{step}: {tokens_clone[0]}')
+# Stanley: End peek
+
 
     def finalize_hypos(
         self,

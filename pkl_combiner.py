@@ -23,13 +23,16 @@ def combine():
         return
     pickle_list = [file for file in os.listdir(pkl_path) if file.startswith("attentions_") and file.endswith(".pkl")]
 
+    print(f'[INFO] number of pickle files: {len(pickle_list)}')
+
     combined = {}
 
     for file in pickle_list:
+        print(f'[INFO] processing file: {file}')
         file_path = os.path.join(pkl_path, file)
         with open(file_path, 'rb') as f:
             data = pickle.load(f)
-        process_pickle(data)
+        #process_pickle(data)
         combined.update(data)
 
     output_path = os.path.join(pkl_path, 'combined_attention.pkl')

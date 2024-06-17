@@ -684,14 +684,17 @@ class TransformerDecoderLayerBase(nn.Module):
                         if not f'layer{layer_idx}' in to_write:
                             break
                         layer_idx += 1
+                    print(f'seg: {seg_idx}, layer: {layer_idx}')
                     to_write[f'layer{layer_idx}'] = {
                         "decoder_self_attention_weights": decoder_self_attention_weights,
                         "cross_attention_weights": cross_attention_weights
                     }
-
-            with open(pkl_path, 'wb') as file:
-                # Pickle to the file
-                pickle.dump(attention_pickle, file)
+            try:
+                with open(pkl_path, 'wb') as file:
+                    # Pickle to the file
+                    pickle.dump(attention_pickle, file, protocol=pickle.HIGHEST_PROTOCOL)
+            except Exception as e:
+                print(f"Error: {e}")
             """Injection ends here"""
 
         residual = x
