@@ -146,7 +146,8 @@ def main():
 
     # iterate over the words
     for i, word in enumerate(words):
-        print(f'[DEBUG] start working on word #{i}: {word}.')
+        msg_to_show = f'[DEBUG] start working on word #{i}: {word}.'
+        print(f"\033[47;30m{msg_to_show}\033[m")
 
         extract_attention(model=model,
                           input_word=word,
