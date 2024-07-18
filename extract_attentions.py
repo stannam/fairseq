@@ -89,7 +89,10 @@ def extract_attention(model, input_word: str, pkl_path:str):
     pkl_handler(dest_path=pkl_path, new=True, key_to_write='input_word',
                 value_to_write=input_word, flatten_key=flatten_key)
 
-    output_word = model.translate(sentences=input_word, verbose=True)
+    output_word = model.translate(sentences=input_word,
+                                  verbose=True,
+                                  beam=5,
+                                  unnormalized=True)
     print(f'Output: {output_word}')
 
     # add output_word to pickle

@@ -19,6 +19,13 @@ from fairseq.data import encoders
 
 logger = logging.getLogger(__name__)
 
+"""stanley: for writing log to a txt file"""
+fh = logging.FileHandler('translation_log.txt')
+logger.addHandler(fh)
+msg_to_show = f"[DEBUG] The log will be saved in {os.getcwd()}/translation_log.txt"
+print(f"\033[91m{msg_to_show}\033[0m")
+del msg_to_show
+
 """stanley: for pickling attentions"""
 import pickle
 pkl_dir = os.environ["PKL_LOC"].split(',')
