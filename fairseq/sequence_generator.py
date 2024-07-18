@@ -634,7 +634,7 @@ class SequenceGenerator(nn.Module):
         tokens_clone = tokens.index_select(0, torch.tensor([0]))[
             :, 1 : step + 2
         ]  # skip the first index, which is EOS
-        print(f'[PEEK] Step #{step}: {tokens_clone[0]}')
+        #silenced print(f'[PEEK] Step #{step}: {tokens_clone[0]}')
 # Stanley: End peek
 
 

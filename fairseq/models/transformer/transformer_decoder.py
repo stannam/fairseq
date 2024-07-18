@@ -351,7 +351,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                         break
                     seg_idx += 1
                 attention_pickle[word_key][f'seg{seg_idx}'] = {}
-                print(f"[DEBUG] Segment {seg_idx}")
+                #silenced print(f"[DEBUG] Segment {seg_idx}")
 
         with open(pkl_path, 'wb') as file:
             # Pickle to the file
@@ -363,7 +363,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                 self_attn_mask = self.buffered_future_mask(x)
             else:
                 self_attn_mask = None
-            print(f'[DEBUG] now in Segment {seg_idx} Decoder layer {idx}')
+            #silenced print(f'[DEBUG] now in Segment {seg_idx} Decoder layer {idx}')
             x, layer_attn, _ = layer(
                 x,
                 enc,

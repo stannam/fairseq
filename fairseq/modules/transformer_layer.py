@@ -356,7 +356,7 @@ class TransformerEncoderLayerBase(nn.Module):
             residual = x
             if self.normalize_before:
                 x = self.self_attn_layer_norm(x)
-            print("[DEBUG] currently in Encoder layer base")  # stanley
+            #silenced print("[DEBUG] currently in Encoder layer base")  # stanley
             x, _ = self.self_attn(
                 query=x,
                 key=x,
@@ -610,7 +610,7 @@ class TransformerDecoderLayerBase(nn.Module):
             y = torch.cat((encoder_out, x), dim=0)
         else:
             y = x
-        print(f'[DEBUG] currently in Decoder layer base. About to call self.self_attn')
+        #silenced print(f'[DEBUG] currently in Decoder layer base. About to call self.self_attn')
         x, attn = self.self_attn(
             query=x,
             key=y,
@@ -631,11 +631,11 @@ class TransformerDecoderLayerBase(nn.Module):
         x = self.residual_connection(x, residual)
         if not self.normalize_before:
             x = self.self_attn_layer_norm(x)
-        print(f'[DEBUG] result of self.self_attn:\n  x: {x}\n  attn: {attn}')
+        #silenced print(f'[DEBUG] result of self.self_attn:\n  x: {x}\n  attn: {attn}')
         decoder_self_attention_weights = copy.deepcopy(attn)  # stanley
 
         if self.encoder_attn is not None and encoder_out is not None:
-            print("[DEBUG] encoder results ready, decoder just done ==> cross attentions?")
+            #silenced print("[DEBUG] encoder results ready, decoder just done ==> cross attentions?")
             residual = x
             if self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)
@@ -667,7 +667,7 @@ class TransformerDecoderLayerBase(nn.Module):
             cross_attention_weights = copy.deepcopy(attn)
 
             """Stanley: injected pickling code here"""
-            print("[DEBUG] About to start pickling decoder self-attention and cross-attention...")
+            #silenced print("[DEBUG] About to start pickling decoder self-attention and cross-attention...")
             with open(pkl_path, 'rb') as file:
                 # load the pickled object
                 attention_pickle = pickle.load(file)
@@ -684,7 +684,7 @@ class TransformerDecoderLayerBase(nn.Module):
                         if not f'layer{layer_idx}' in to_write:
                             break
                         layer_idx += 1
-                    print(f'seg: {seg_idx}, layer: {layer_idx}')
+                    #silenced print(f'seg: {seg_idx}, layer: {layer_idx}')
                     to_write[f'layer{layer_idx}'] = {
                         "decoder_self_attention_weights": decoder_self_attention_weights,
                         "cross_attention_weights": cross_attention_weights
