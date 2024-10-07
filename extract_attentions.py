@@ -6,6 +6,7 @@ from fairseq.models.transformer import TransformerModel
 from fairseq.data import Dictionary
 
 # make sure to set the working directory
+#   (e.g., .../Dissertation/2024-Jan Fairseq/segment no syll boundary/2024-04-25 4layer_2head)
 # and also environment variable for pickle. e.g., 'PKL_LOC'=
 
 CWD = os.getcwd()

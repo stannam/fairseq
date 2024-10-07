@@ -116,9 +116,10 @@ class TransformerEncoderLayerBase(nn.Module):
             self.activation_relu_or_gelu = 0
         # Batch first can not be justified but needs user to make sure
         self.can_use_fastpath = (
-            not self.normalize_before
-            and self.activation_relu_or_gelu
-            and (self.self_attn_layer_norm.eps == self.final_layer_norm.eps)
+            False  # Stanley: make this always False to extract encoder self-attention
+            # not self.normalize_before
+            # and self.activation_relu_or_gelu
+            # and (self.self_attn_layer_norm.eps == self.final_layer_norm.eps)
         )
         self.cfg_checkpoint_activations = self.cfg.checkpoint_activations
         # torch version check
@@ -288,6 +289,7 @@ class TransformerEncoderLayerBase(nn.Module):
         x,
         encoder_padding_mask: Optional[Tensor],
         attn_mask: Optional[Tensor] = None,
+        need_attn: bool = False,  # Stanley added this
     ):
         """
         Args:
@@ -357,12 +359,12 @@ class TransformerEncoderLayerBase(nn.Module):
             if self.normalize_before:
                 x = self.self_attn_layer_norm(x)
             print("[DEBUG] currently in Encoder layer base")  # stanley
-            x, _ = self.self_attn(
+            x, attn = self.self_attn(
                 query=x,
                 key=x,
                 value=x,
                 key_padding_mask=encoder_padding_mask,
-                need_weights=False,
+                need_weights=need_attn,
                 attn_mask=attn_mask,
             )
             x = self.dropout_module(x)
@@ -385,8 +387,14 @@ class TransformerEncoderLayerBase(nn.Module):
                 x = self.final_layer_norm(x)
 
             if self.return_fc and not torch.jit.is_scripting():
-                return x, fc_result
-            return x
+                if need_attn:
+                    return x, attn, fc_result
+                else:
+                    return x, fc_result
+            if need_attn:
+                return x, attn
+            else:
+                return x
 
 
 # backward compatible with the legacy argparse format

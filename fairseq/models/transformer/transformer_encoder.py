@@ -290,15 +290,31 @@ class TransformerEncoderBase(FairseqEncoder):
         else:
             processing_mask = encoder_padding_mask
         encoder_padding_mask_out = processing_mask if has_pads else None
+
+        attention_weights = []  # Stanley: container for encoder self-attention weights
         for layernumber, layer in enumerate(self.layers):
             print(f'[DEBUG] Now encoder layer #{layernumber}')
-            lr = layer(x, encoder_padding_mask=encoder_padding_mask_out)
+            attn = None
+            fc_result = None
 
-            if isinstance(lr, tuple) and len(lr) == 2:
-                x, fc_result = lr
+            lr = layer(  # calls TransformerEncoderLayerBase.forward() method in 'transformer_layer.py'
+                x,
+                encoder_padding_mask=encoder_padding_mask_out,
+                need_attn=True,
+                need_head_weights=True,  # Request per-head attention weights
+            )
+
+            if isinstance(lr, tuple):
+                if len(lr) == 2:
+                    x, attn = lr
+                elif len(lr) == 3:
+                    x, attn, fc_result = lr
             else:
                 x = lr
-                fc_result = None
+
+            # Collect attention weights
+            if attn is not None:
+                attention_weights.append(attn)
 
             if return_all_hiddens and not torch.jit.is_scripting():
                 assert encoder_states is not None
@@ -330,6 +346,7 @@ class TransformerEncoderBase(FairseqEncoder):
             "encoder_padding_mask": [encoder_padding_mask],  # B x T
             "encoder_embedding": [encoder_embedding],  # B x T x C
             "encoder_states": encoder_states,  # List[T x B x C]
+            "attention_weights": attention_weights,  # List of attention weights. each element: attentions in a layer
             "fc_results": fc_results,  # List[T x B x C]
             "src_tokens": [],
             "src_lengths": [src_lengths],
