@@ -3,19 +3,15 @@
 # combined attn pkl is a dict of words in which each word is a dict with the following structure
 # (each word)
 # |
-# +-- (segment)
+# +-- (layer)
 # |   |
-# |   +-- (layer)
-# |   |   |
-# |   |   +-- (decoder self-attention)
-# |   |   |
-# |   |   +-- (cross-attention): tensor with size [(head), (beam), (input_seg)]
-# |   |
-# |   +-- (layer)
-# |   |
-# |   +-- ....
+# |   +-- (encoder self-attention): tensor with size [(head), (beam), (target position), (source position)]
 # |
-# +-- (segment)
+# +-- (layer)
+# |
+# +-- ....
+# |
+# +-- (layer)
 # |
 # +-- ...
 #
@@ -57,34 +53,29 @@ def parse_word(word: dict) -> dict:
         'output_word': word.get('output_word'),
         'layers': list()}
 
-    segments = {key: word[key] for key in word if key.startswith('seg') and key[3:].isdigit()}
-    print("[INFO] Number of seg: ", len(segments))
-    init = False
-    for seg_idx, seg in enumerate(segments):
-        print("[INFO]     Segment #", seg_idx)
-        if seg_idx == 0:
-            init = True
-        layers = {key: segments[seg][key] for key in segments[seg].keys() if key.startswith('layer') and key[5:].isdigit()}
-        n_layer = len(layers)
-        print("[INFO]     Number of layers: ", n_layer)
-        for layer_idx, layer in enumerate(layers):
-            all_heads = layers[layer]['cross_attention_weights']
-            n_heads = len(all_heads)
-            print("[INFO]         In layer #", layer_idx)
-            print("[INFO]         Number of heads: ", n_heads)
-            if init:
-                [r_dict['layers'].append(list()) for i in range(n_layer)]
-                for each_layer in range(n_layer):
-                    [r_dict['layers'][each_layer].append(list()) for head in range(n_heads)]
-                init = False
-            for head_idx, head in enumerate(all_heads):
-                tensor_to_add = head[winner_idx]
-                r_dict['layers'][layer_idx][head_idx].extend(tensor_to_add)
+    layers = {key: word[key] for key in word.keys() if key.startswith('layer') and key[5:].isdigit()}
+    n_layer = len(layers)
+    print("[INFO]     Number of layers: ", n_layer)
+    init = True
+    for layer_idx, layer in enumerate(layers):
+        all_heads = layers[layer]['encoder_self_attention_weights']
+        n_heads = len(all_heads)
+        print("[INFO]         In layer #", layer_idx)
+        print("[INFO]         Number of heads: ", n_heads)
+        if init:
+            [r_dict['layers'].append(list()) for i in range(n_layer)]
+            for each_layer in range(n_layer):
+                [r_dict['layers'][each_layer].append(list()) for head in range(n_heads)]
+            init = False
+        for head_idx, head in enumerate(all_heads):
+            tensor_to_add = head[winner_idx]
+            r_dict['layers'][layer_idx][head_idx].extend(tensor_to_add)
     return r_dict
 
-def convert():
+
+def convert(checkpoint_n: int = 16):
     pkl_dir = os.environ["PKL_LOC"].split(',')
-    pkl_path = os.path.join(os.getcwd(), pkl_dir[0], 'combined_attention.pkl')
+    pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})', 'combined_attention.pkl')
 
     print("[INFO] cwd: ", os.getcwd())
     print("[INFO] pkl_path (path to combined pkl_attn: ", pkl_path)
@@ -106,11 +97,14 @@ def convert():
         print('\n')
 
     # save pkl file
-    new_pkl_path = os.path.join(os.getcwd(), pkl_dir[0], 'combined_attention_aligned_for_analysis.pkl')
+    new_pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})', 'combined_attention_aligned_for_analysis.pkl')
     with open(new_pkl_path, 'wb') as f:
         pickle.dump(res_dict, f)
     print("[INFO] pkl dumped")
 
 
 if __name__ == "__main__":
-    convert()
+    checkpoint_numbers = [16, 42, 49]
+    for checkpoint_number in checkpoint_numbers:
+        convert(checkpoint_number)
+

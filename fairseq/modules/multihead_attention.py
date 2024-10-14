@@ -515,6 +515,7 @@ class MultiheadAttention(nn.Module):
 
         if (
             not self.onnx_trace
+            and 1 != 1  # Stanley artificially cause False
             and not is_tpu  # don't use PyTorch version on TPUs
             and incremental_state is None
             and not static_kv

@@ -13,9 +13,9 @@ def process_pickle(data: dict):
     idx = data['winner_idx']
 
 
-def combine():
+def combine(checkpoint_n: int = 16):
     pkl_dir = os.environ["PKL_LOC"].split(',')
-    pkl_path = os.path.join(os.getcwd(), pkl_dir[0])
+    pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})')
 
     print(f'pickles directory: {pkl_path}')
     need_quit = input("\n Make sure the info above makes sense. Q to quit.")
@@ -41,4 +41,5 @@ def combine():
 
 
 if __name__ == "__main__":
-    combine()
+    checkpoint_number = 49   # 16, 42, 49
+    combine(checkpoint_number)

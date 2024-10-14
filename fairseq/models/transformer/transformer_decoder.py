@@ -339,31 +339,11 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         # decoder layers
         attn: Optional[Tensor] = None
         inner_states: List[Optional[Tensor]] = [x]
-        """Stanley: attention pkl segment treatment"""
-        with open(pkl_path, 'rb') as file:
-            # load the pickled object
-            attention_pickle = pickle.load(file)
-        for word_key, value in attention_pickle.items():
-            if not value.get('finished', True):
-                seg_idx = 0
-                while True:
-                    if not f'seg{seg_idx}' in attention_pickle[word_key]:
-                        break
-                    seg_idx += 1
-                attention_pickle[word_key][f'seg{seg_idx}'] = {}
-                print(f"[DEBUG] Segment {seg_idx}")
-
-        with open(pkl_path, 'wb') as file:
-            # Pickle to the file
-            pickle.dump(attention_pickle, file)
-
-        """End injection"""
         for idx, layer in enumerate(self.layers):
             if incremental_state is None and not full_context_alignment:
                 self_attn_mask = self.buffered_future_mask(x)
             else:
                 self_attn_mask = None
-            print(f'[DEBUG] now in Segment {seg_idx} Decoder layer {idx}')
             x, layer_attn, _ = layer(
                 x,
                 enc,

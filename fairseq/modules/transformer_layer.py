@@ -290,6 +290,7 @@ class TransformerEncoderLayerBase(nn.Module):
         encoder_padding_mask: Optional[Tensor],
         attn_mask: Optional[Tensor] = None,
         need_attn: bool = False,  # Stanley added this
+        need_head_weights: bool = False,  # Stanley added this
     ):
         """
         Args:
@@ -366,6 +367,7 @@ class TransformerEncoderLayerBase(nn.Module):
                 key_padding_mask=encoder_padding_mask,
                 need_weights=need_attn,
                 attn_mask=attn_mask,
+                need_head_weights=need_head_weights,
             )
             x = self.dropout_module(x)
             x = self.residual_connection(x, residual)
@@ -395,7 +397,6 @@ class TransformerEncoderLayerBase(nn.Module):
                 return x, attn
             else:
                 return x
-
 
 # backward compatible with the legacy argparse format
 class TransformerEncoderLayer(TransformerEncoderLayerBase):
@@ -672,38 +673,6 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.residual_connection(x, residual)
             if not self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)
-            cross_attention_weights = copy.deepcopy(attn)
-
-            """Stanley: injected pickling code here"""
-            print("[DEBUG] About to start pickling decoder self-attention and cross-attention...")
-            with open(pkl_path, 'rb') as file:
-                # load the pickled object
-                attention_pickle = pickle.load(file)
-            for word_key, value in attention_pickle.items():
-                if not value.get('finished', True):
-                    seg_idx = 0
-                    while True:
-                        if not f'seg{seg_idx}' in attention_pickle[word_key]:
-                            break
-                        seg_idx += 1
-                    to_write = attention_pickle[word_key][f'seg{seg_idx - 1}']
-                    layer_idx = 0
-                    while True:
-                        if not f'layer{layer_idx}' in to_write:
-                            break
-                        layer_idx += 1
-                    print(f'seg: {seg_idx}, layer: {layer_idx}')
-                    to_write[f'layer{layer_idx}'] = {
-                        "decoder_self_attention_weights": decoder_self_attention_weights,
-                        "cross_attention_weights": cross_attention_weights
-                    }
-            try:
-                with open(pkl_path, 'wb') as file:
-                    # Pickle to the file
-                    pickle.dump(attention_pickle, file, protocol=pickle.HIGHEST_PROTOCOL)
-            except Exception as e:
-                print(f"Error: {e}")
-            """Injection ends here"""
 
         residual = x
         if self.normalize_before:

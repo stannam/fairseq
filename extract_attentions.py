@@ -14,8 +14,8 @@ DATA_BIN = os.path.join(CWD, 'bin')
 DICTIONARY = os.path.join(DATA_BIN, 'dict.ur.txt')
 
 # if visualizing my custom transformer model
-MODEL = os.path.join(CWD, 'model_output_transformer')
-CHECKPOINT = 'checkpoint110.pt'
+MODEL = os.path.join(CWD, 'model_output')
+CHECKPOINT = 'checkpoint49.pt'
 
 # if visualizing an example from fairseq
 #MODEL = os.path.join(CWD, 'wmt14.en-fr.joined-dict.transformer')  # a fairseq example model
@@ -131,18 +131,18 @@ def main():
     # prepare pkl file to save attention weights.
     pkl_handler(pkl_path)
 
-    # load the wordlist I used for the human experiment
-    experiment_wordlist_path = os.path.join('apply_translation', 'entries.txt')
-    if not os.path.exists(experiment_wordlist_path):
+    # the wordlist to translate is valid list
+    to_translate_wordlist_path = os.path.join(CWD, 'dev.ur-sr.ur')
+    if not os.path.exists(to_translate_wordlist_path):
         message = "No experiment stimuli list file found. select 'apply_translation/entries.txt' to continue."
         stimuli_list_path = path_selector(pathtype='file', msg=message)
         stimuli_list_dir = os.path.join(CWD, 'apply_translation')
         if not os.path.exists(stimuli_list_dir):
             os.makedirs(stimuli_list_dir)
         cp(stimuli_list_path, os.path.join(stimuli_list_dir,'entries.txt'))
-        experiment_wordlist_path = os.path.join(stimuli_list_dir, 'entries.txt')
+        to_translate_wordlist_path = os.path.join(stimuli_list_dir, 'entries.txt')
 
-    with open(experiment_wordlist_path, 'r', encoding='utf-8') as file:
+    with open(to_translate_wordlist_path, 'r', encoding='utf-8') as file:
         words = [line.strip() for line in file]
 
     # iterate over the words

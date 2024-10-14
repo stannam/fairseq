@@ -25,6 +25,13 @@ from fairseq.modules import (
 from fairseq.modules.checkpoint_activations import checkpoint_wrapper
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
 
+"""stanley: for pickling attentions"""
+import os
+import pickle
+import copy
+pkl_dir = os.environ["PKL_LOC"].split(',')
+pkl_path = os.path.join(os.getcwd(), pkl_dir[0], f'{pkl_dir[1]}.pkl')
+"""end for pickling"""
 
 # rewrite name for backward compatibility in `make_generation_fast_`
 def module_name_fordropout(module_name: str) -> str:
@@ -321,6 +328,9 @@ class TransformerEncoderBase(FairseqEncoder):
                 encoder_states.append(x)
                 fc_results.append(fc_result)
 
+        # pickle encoder self-attention
+        self.pickle_encoder_attention_weights(attention_weights)
+
         # change back to non-nested and Batch second
         if NT_flag:
             x = x.to_padded_tensor(0.0)
@@ -351,6 +361,28 @@ class TransformerEncoderBase(FairseqEncoder):
             "src_tokens": [],
             "src_lengths": [src_lengths],
         }
+
+    def pickle_encoder_attention_weights(self, attn):
+        print("[DEBUG] About to start pickling encoder self-attention...")
+        with open(pkl_path, 'rb') as file:
+            # load the pickled object
+            attention_pickle = pickle.load(file)
+        for word_key, value in attention_pickle.items():
+            if not value.get('finished', True):
+                # attention weights for this word is not saved. Let's save it now.
+                place_to_write = attention_pickle[word_key]
+                for layer_n, a in enumerate(attn):
+                    place_to_write[f'layer{layer_n}'] = {
+                        "encoder_self_attention_weights": a
+                    }
+                place_to_write['finished'] = True
+        try:
+            with open(pkl_path, 'wb') as file:
+                # Pickle to the file
+                pickle.dump(attention_pickle, file, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception as e:
+            print(f"Error: {e}")
+
 
     @torch.jit.export
     def reorder_encoder_out(self, encoder_out: Dict[str, List[Tensor]], new_order):
