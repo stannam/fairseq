@@ -16,11 +16,17 @@ def process_pickle(data: dict):
 def combine(checkpoint_n: int = 16):
     pkl_dir = os.environ["PKL_LOC"].split(',')
     pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})')
+    pkl_path_alt = os.path.join(os.getcwd(), pkl_dir[0])
 
-    print(f'pickles directory: {pkl_path}')
-    need_quit = input("\n Make sure the info above makes sense. Q to quit.")
-    if need_quit.lower() == 'q':
-        return
+    while True:
+        print(f'pickles directory: {pkl_path}')
+        need_quit = input("\n Make sure the info above makes sense. Q to quit. A to remove checkpoint number")
+        if need_quit.lower() == 'q':
+            return
+        elif need_quit.lower() == 'a':
+            pkl_path = pkl_path_alt
+        else:
+            break
     pickle_list = [file for file in os.listdir(pkl_path) if file.startswith("attentions_") and file.endswith(".pkl")]
 
     print(f'[INFO] number of pickle files: {len(pickle_list)}')
@@ -41,5 +47,5 @@ def combine(checkpoint_n: int = 16):
 
 
 if __name__ == "__main__":
-    checkpoint_number = 49   # 16, 42, 49
+    checkpoint_number = 7   # 16, 42, 49
     combine(checkpoint_number)

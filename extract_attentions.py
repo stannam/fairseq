@@ -15,7 +15,7 @@ DICTIONARY = os.path.join(DATA_BIN, 'dict.ur.txt')
 
 # if visualizing my custom transformer model
 MODEL = os.path.join(CWD, 'model_output')
-CHECKPOINT = 'checkpoint49.pt'
+CHECKPOINT = 'checkpoint7.pt'  # for maltese classifier 7 performed the best
 
 # if visualizing an example from fairseq
 #MODEL = os.path.join(CWD, 'wmt14.en-fr.joined-dict.transformer')  # a fairseq example model

@@ -76,9 +76,11 @@ def parse_word(word: dict) -> dict:
 def convert(checkpoint_n: int = 16):
     pkl_dir = os.environ["PKL_LOC"].split(',')
     pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})', 'combined_attention.pkl')
-
+    if not os.path.exists(pkl_path):
+        pkl_path = os.path.join(os.getcwd(), pkl_dir[0], 'combined_attention.pkl')
     print("[INFO] cwd: ", os.getcwd())
-    print("[INFO] pkl_path (path to combined pkl_attn: ", pkl_path)
+    print("[INFO] pkl_path (path to combined pkl_attn): ", pkl_path)
+    print("[INFO] pkl_path exists?", os.path.exists(pkl_path))
     need_quit = input("Ok to proceed? Q to quit.")
     if need_quit.lower() == 'q':
         return
@@ -97,14 +99,14 @@ def convert(checkpoint_n: int = 16):
         print('\n')
 
     # save pkl file
-    new_pkl_path = os.path.join(os.getcwd(), f'{pkl_dir[0]} (checkpoint{checkpoint_n})', 'combined_attention_aligned_for_analysis.pkl')
+    new_pkl_path = os.path.join(os.path.dirname(pkl_path), 'combined_attention_aligned_for_analysis.pkl')
     with open(new_pkl_path, 'wb') as f:
         pickle.dump(res_dict, f)
     print("[INFO] pkl dumped")
 
 
 if __name__ == "__main__":
-    checkpoint_numbers = [16, 42, 49]
+    checkpoint_numbers = [7]
     for checkpoint_number in checkpoint_numbers:
         convert(checkpoint_number)
 
