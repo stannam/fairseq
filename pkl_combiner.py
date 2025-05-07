@@ -13,9 +13,10 @@ def process_pickle(data: dict):
     idx = data['winner_idx']
 
 
-def combine():
-    pkl_dir = os.environ["PKL_LOC"].split(',')
-    pkl_path = os.path.join(os.getcwd(), pkl_dir[0])
+def combine(pkl_path: str = None):
+    if pkl_path is None:
+        pkl_dir = os.environ["PKL_LOC"].split(',')
+        pkl_path = os.path.join(os.getcwd(), pkl_dir[0])
 
     print(f'pickles directory: {pkl_path}')
     need_quit = input("\n Make sure the info above makes sense. Q to quit.")
@@ -38,7 +39,8 @@ def combine():
     output_path = os.path.join(pkl_path, 'combined_attention.pkl')
     with open(output_path, 'wb') as output_file:
         pickle.dump(combined, output_file)
+        print(f'[INFO] saved combined_attention.pkl in {output_path}.')
 
 
 if __name__ == "__main__":
-    combine()
+    combine(pkl_path='/Users/stanley/Library/CloudStorage/Dropbox/Dissertation/2024-Jan Fairseq/segment no syll boundary/2024-04-25 4layer_2head/export_attention_weights_filler_subset')
